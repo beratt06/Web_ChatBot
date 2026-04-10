@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Türk Telekom Siber Asistan</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Matrix effect bg */
+        .matrix-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 460px;
+            height: 88vh;
+            max-height: 720px;
+            background: linear-gradient(180deg, rgba(15, 15, 25, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 200, 255, 0.05) 100%);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* İkonlar arası boşluk */
+            gap: 14px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: #0a0a0f;
+            font-size: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .header-info h1 { 
+            font-size: 15px; 
+            font-weight: 600;
+            color: #00ff88;
+        }
+        .header-info .status { 
+            font-size: 11px; 
+            color: rgba(255, 255, 255, 0.6);
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
+            margin-top: 3px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot { 
+            width: 6px; height: 6px; 
+            background: #00ff88; 
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px #00ff88; }
+            50% { opacity: 0.5; box-shadow: 0 0 15px #00ff88; }
+        }
+
+        /* Messages Area */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .message.user {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #e0e0e0;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .message.bot {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #c8c8c8;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(0, 255, 136, 0.1);
+            display: flex;
+            gap: 12px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            color: #e0e0e0;
+            outline: none;
+        }
+        .input-area input:focus { border-color: #00ff88; }
+        .input-area button {
+            padding: 14px 22px;
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Buttons & Icons */
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .auth-btn {
+            font-size: 11px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .btn-login {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+        .btn-login:hover { background: rgba(0, 255, 136, 0.2); }
+
+        .btn-logout {
+            background: rgba(255, 50, 50, 0.1);
+            border-color: rgba(255, 50, 50, 0.3);
+            color: #ff4444;
+            display: none; /* Başlangıçta gizli */
+        }
+        .btn-logout:hover { background: rgba(255, 50, 50, 0.2); }
+
+        .settings-btn {
+            background: transparent;
+            border: none;
+            color: #00ff88;
+            font-size: 18px;
+            cursor: pointer;
+            display: none; /* Sadece admin girince görünür */
+            transition: transform 0.3s;
+        }
+        .settings-btn:hover { transform: rotate(45deg); }
+
+        .model-btn {
+            background: transparent;
+            border: none;
+            color: #00d4ff;
+            font-size: 18px;
+            cursor: pointer;
+            display: none; /* Sadece admin girince görünür */
+            transition: transform 0.3s;
+        }
+        .model-btn:hover { transform: scale(1.2); }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: #0f0f18;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.15);
+        }
+        .modal h3 { color: #00ff88; margin-bottom: 15px; font-family: 'JetBrains Mono', monospace; }
+        
+        .modal input, .modal textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .modal textarea { height: 200px; resize: vertical; }
+        
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-save { background: #00ff88; color: black; border:none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: transparent; color: #888; border:1px solid #444; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #00ff88; color: #000; padding: 10px 20px; border-radius: 8px;
+            font-weight: bold; display: none; z-index: 2000;
+        }
+        .toast.show { display: block; animation: fadeInOut 2s; }
+        @keyframes fadeInOut { 0%, 100% {opacity:0;} 10%,90% {opacity:1;} }
+
+        /* Typing Animation */
+        .typing span { display: inline-block; width: 6px; height: 6px; background: #00ff88; border-radius: 50%; margin: 0 2px; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% {transform:translateY(0);} 50% {transform:translateY(-5px);} }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    <div class="chat-container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">TT</div>
+                <div class="header-info">
+                    <h1>[ KURUMSAL ASİSTAN ]</h1>
+                    <div class="status"><span class="status-dot"></span>SİSTEM AKTİF</div>
+                </div>
+            </div>
+            
+            <div class="header-controls">
+                <button class="model-btn" onclick="openModelModal()" title="Model Değiştir">🤖</button>
+                <button class="settings-btn" onclick="openPromptModal()" title="Prompt Düzenle">⚙️</button>
+                <button class="auth-btn btn-login" onclick="openLoginModal()" id="loginBtn">Admin Girişi</button>
+                <button class="auth-btn btn-logout" onclick="logout()" id="logoutBtn">Çıkış</button>
+            </div>
+        </div>
+
+        <div class="messages" id="messages">
+            <div style="text-align: center; margin-top: 50px; opacity: 0.7;">
+                <div style="font-size: 40px; margin-bottom: 10px;">🛡️</div>
+                <span style="color: #e0e0e0;"><p>Güvenli bağlantı kuruldu.<br>Sorularınızı bekliyorum.</p></span>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Mesajınızı yazın..." autocomplete="off">
+            <button id="sendBtn" onclick="sendMessage()">Gönder</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <h3>🔑 Admin Girişi</h3>
+            <p style="color:#888; font-size:12px; margin-bottom:10px;">Lütfen sunucu konsolunda oluşturulan Admin Key'i girin.</p>
+            <input type="password" id="apiKeyInput" placeholder="Admin API Key">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeLoginModal()">İptal</button>
+                <button class="btn-save" onclick="login()">Giriş Yap</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="promptModal">
+        <div class="modal">
+            <h3>⚙️ Prompt Düzenle</h3>
+            <textarea id="promptText" placeholder="Yükleniyor..."></textarea>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closePromptModal()">Kapat</button>
+                <button class="btn-save" onclick="savePrompt()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modelModal">
+        <div class="modal">
+            <h3>🤖 Model Değiştir</h3>
+            <p style="color:#888; font-size:12px; margin-bottom:10px;">Mevcut Model: <span id="currentModelDisplay" style="color:#00ff88;">Yükleniyor...</span></p>
+            <select id="modelSelect" style="width:100%; padding:12px; margin-bottom:15px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:8px; font-family:'JetBrains Mono', monospace;">
+                <option value="gpt-oss:120b-cloud">gpt-oss:120b-cloud (Varsayılan)</option>
+                <option value="gpt-oss:20b-cloud">gpt-oss:20b-cloud</option>
+                <option value="deepseek-v3.1:671b-cloud">deepseek-v3.1:671b-cloud</option>
+                <option value="qwen3-coder:480b-cloud">qwen3-coder:480b-cloud</option>
+                <option value="qwen3-vl:235b-cloud">qwen3-vl:235b-cloud</option>
+                <option value="minimax-m2:cloud">minimax-m2:cloud</option>
+                <option value="qlm-4.6:cloud">qlm-4.6:cloud</option>
+            </select>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModelModal()">Kapat</button>
+                <button class="btn-save" onclick="saveModel()">Değiştir</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">İşlem Başarılı!</div>
+
+    <script>
+        // --- AUTH LOGIC ---
+        function getApiKey() {
+            return sessionStorage.getItem('admin_api_key');
+        }
+
+        function checkAuth() {
+            const key = getApiKey();
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const settingsBtn = document.querySelector('.settings-btn');
+            const modelBtn = document.querySelector('.model-btn');
+
+            if (key) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+                settingsBtn.style.display = 'block';
+                modelBtn.style.display = 'block';
+            } else {
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+                settingsBtn.style.display = 'none';
+                modelBtn.style.display = 'none';
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('apiKeyInput').value = '';
+            document.getElementById('apiKeyInput').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+        }
+
+        function login() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (key) {
+                // SessionStorage'a kaydet (Tarayıcı kapanınca silinir)
+                sessionStorage.setItem('admin_api_key', key);
+                checkAuth();
+                closeLoginModal();
+                showToast("Admin girişi yapıldı");
+            } else {
+                alert("Lütfen bir anahtar girin.");
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('admin_api_key');
+            checkAuth();
+            showToast("Çıkış yapıldı");
+            // Açık modaller varsa kapat
+            closePromptModal();
+            closeModelModal();
+            closePdfModal();
+        }
+
+        // --- MODEL LOGIC ---
+        async function openModelModal() {
+            if (!getApiKey()) {
+                openLoginModal();
+                return;
+            }
+            document.getElementById('modelModal').classList.add('active');
+            
+            try {
+                const res = await fetch('/admin/current-model');
+                const data = await res.json();
+                const currentModel = data.model || "gpt-oss:120b-cloud";
+                document.getElementById('currentModelDisplay').textContent = currentModel;
+                document.getElementById('modelSelect').value = currentModel;
+            } catch (e) {
+                document.getElementById('currentModelDisplay').textContent = "Yüklenemedi";
+            }
+        }
+
+        function closeModelModal() {
+            document.getElementById('modelModal').classList.remove('active');
+        }
+
+        async function saveModel() {
+            const newModel = document.getElementById('modelSelect').value;
+            const key = getApiKey();
+
+            if (!newModel) {
+                alert("Lütfen bir model adı girin.");
+                return;
+            }
+
+            if (!key) {
+                alert("Oturum süreniz dolmuş veya giriş yapmamışsınız.");
+                closeModelModal();
+                openLoginModal();
+                return;
+            }
+
+            try {
+                const res = await fetch('/admin/update-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': key
+                    },
+                    body: JSON.stringify({ new_model: newModel })
+                });
+
+                if (res.ok) {
+                    showToast("Model güncellendi!");
+                    closeModelModal();
+                } else {
+                    const err = await res.json();
+                    alert("Hata: " + (err.detail || "Yetkisiz erişim."));
+                    if (res.status === 403) logout();
+                }
+            } catch (e) {
+                alert("Bağlantı hatası!");
+            }
+        }
+
+        // --- PROMPT LOGIC ---
+        async function openPromptModal() {
+            if (!getApiKey()) {
+                openLoginModal();
+                return;
+            }
+            document.getElementById('promptModal').classList.add('active');
+            
+            try {
+                const res = await fetch('/admin/current-prompt');
+                const data = await res.json();
+                document.getElementById('promptText').value = data.prompt || "";
+            } catch (e) {
+                document.getElementById('promptText').value = "Hata: Prompt yüklenemedi.";
+            }
+        }
+
+        function closePromptModal() {
+            document.getElementById('promptModal').classList.remove('active');
+        }
+
+        async function savePrompt() {
+            const newPrompt = document.getElementById('promptText').value;
+            const key = getApiKey();
+
+            if (!key) {
+                alert("Oturum süreniz dolmuş veya giriş yapmamışsınız.");
+                closePromptModal();
+                openLoginModal();
+                return;
+            }
+
+            try {
+                const res = await fetch('/admin/update-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': key // Key'i header'da gönderiyoruz
+                    },
+                    body: JSON.stringify({ new_prompt: newPrompt })
+                });
+
+                if (res.ok) {
+                    showToast("Prompt güncellendi!");
+                    closePromptModal();
+                } else {
+                    const err = await res.json();
+                    alert("Hata: " + (err.detail || "Yetkisiz erişim."));
+                    if (res.status === 403) logout(); // Key yanlışsa çıkış yap
+                }
+            } catch (e) {
+                alert("Bağlantı hatası!");
+            }
+        }
+
+        // --- PDF MANAGEMENT LOGIC ---
+        async function openPdfModal() {
+            if (!getApiKey()) {
+                openLoginModal();
+                return;
+            }
+            document.getElementById('pdfModal').classList.add('active');
+            loadPdfList();
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdfModal').classList.remove('active');
+        }
+
+        async function loadPdfList() {
+            const pdfListDiv = document.getElementById('pdfList');
+            try {
+                const res = await fetch('/admin/list-pdfs');
+                const data = await res.json();
+                
+                if (data.pdfs && data.pdfs.length > 0) {
+                    pdfListDiv.innerHTML = data.pdfs.map(pdf => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(0,255,136,0.05); margin-bottom:5px; border-radius:5px;">
+                            <span style="color:#e0e0e0; font-size:12px;">${pdf}</span>
+                            <button onclick="deletePDF('${pdf}')" style="background:#ff4444; border:none; color:white; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px;">🗑️ Sil</button>
+                        </div>
+                    `).join('');
+                } else {
+                    pdfListDiv.innerHTML = '<p style="color:#888; text-align:center;">Henüz PDF yüklenmemiş.</p>';
+                }
+            } catch (e) {
+                pdfListDiv.innerHTML = '<p style="color:#ff4444; text-align:center;">Yükleme hatası!</p>';
+            }
+        }
+
+        async function uploadPDF() {
+            const fileInput = document.getElementById('pdfFileInput');
+            const files = fileInput.files;
+            const key = getApiKey();
+
+            if (!files || files.length === 0) {
+                alert('Lütfen en az bir PDF dosyası seçin.');
+                return;
+            }
+
+            if (!key) {
+                alert('Oturum süreniz dolmuş.');
+                closePdfModal();
+                openLoginModal();
+                return;
+            }
+
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+
+            try {
+                showToast('PDF yükleniyor ve işleniyor, lütfen bekleyin...');
+                const res = await fetch('/admin/upload-pdfs', {
+                    method: 'POST',
+                    headers: {'x-api-key': key},
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message || 'PDF başarıyla yüklendi!');
+                    fileInput.value = '';
+                    loadPdfList();
+                } else {
+                    const err = await res.json();
+                    alert('Hata: ' + (err.detail || 'Bilinmeyen hata'));
+                    if (res.status === 403) logout();
+                }
+            } catch (e) {
+                alert('Bağlantı hatası: ' + e.message);
+            }
+        }
+
+        async function deletePDF(filename) {
+            if (!confirm(`'${filename}' dosyasını silmek istediğinize emin misiniz?`)) return;
+            
+            const key = getApiKey();
+            if (!key) {
+                alert('Oturum süreniz dolmuş.');
+                closePdfModal();
+                openLoginModal();
+                return;
+            }
+
+            try {
+                showToast('PDF siliniyor ve veritabanı güncelleniyor...');
+                const res = await fetch(`/admin/delete-pdf/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE',
+                    headers: {'x-api-key': key}
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message || 'PDF silindi!');
+                    loadPdfList();
+                } else {
+                    const err = await res.json();
+                    alert('Hata: ' + (err.detail || 'Bilinmeyen hata'));
+                    if (res.status === 403) logout();
+                }
+            } catch (e) {
+                alert('Bağlantı hatası: ' + e.message);
+            }
+        }
+
+        // --- CHAT LOGIC ---
+        const userInput = document.getElementById('userInput');
+        const messagesDiv = document.getElementById('messages');
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            userInput.value = '';
+            
+            // Loading indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ question: text })
+                });
+                const data = await res.json();
+                
+                typingDiv.remove();
+                if (data.response) addMessage(data.response, 'bot');
+                else addMessage("Hata: " + (data.detail || "Bilinmeyen hata"), 'bot');
+            } catch (e) {
+                typingDiv.remove();
+                addMessage("Sunucuya bağlanılamadı.", 'bot');
+            }
+        }
+
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = text;
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        // Başlangıç kontrolü
+        checkAuth();
+    </script>
+</body>
+</html>
